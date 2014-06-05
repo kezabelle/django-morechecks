@@ -26,7 +26,13 @@ def templates_do_not_do_queries(app_configs, **kwargs):
         count_before = len(connection.queries)
         # fetch and execute the context processor.
         # emulates django.template.context.RequestContext.__init__
-        import_string(processor)(request)
+        data = import_string(processor)(request)
+        # call any callables, and hope that __repr__ is defined and
+        # causes an evaluation.
+        for key, value in data.items():
+            if callable(value):
+                value = value()
+            repr(value)
         count_after = len(connection.queries)
         if count_after > count_before:
             final_count = count_after - count_before
